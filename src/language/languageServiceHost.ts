@@ -20,8 +20,8 @@ module Lint {
     export function createLanguageServiceHost(fileName: string, source: string) {
         var host: ts.LanguageServiceHost = {
             getScriptFileNames: () => [fileName],
-            getScriptVersion: (filename) => "1",
-            getScriptSnapshot: (filename) => {
+            getScriptVersion: () => "1",
+            getScriptSnapshot: () => {
                 return {
                     getText: (start, end) => source.substring(start, end),
                     getLength: () => source.length,
@@ -30,7 +30,7 @@ module Lint {
                 };
             },
             getCurrentDirectory: () => "",
-            getScriptIsOpen: () => false,
+            getScriptIsOpen: () => true,
             getCompilationSettings: () => Lint.createCompilerOptions(),
             getDefaultLibFilename: (options) => "lib.d.ts",
             log: (message) => { /* */ }

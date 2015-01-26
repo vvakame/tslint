@@ -20,51 +20,46 @@ export class Rule extends Lint.Rules.AbstractRule {
     public static FAILURE_STRING_PREFIX = "variable '";
     public static FAILURE_STRING_POSTFIX = "' used before declaration";
 
-    public apply(syntaxTree: TypeScript.SyntaxTree): Lint.RuleFailure[] {
+    public apply(sourceFile: ts.SourceFile): Lint.RuleFailure[] {
+        console.log(sourceFile.filename);
         var documentRegistry = ts.createDocumentRegistry();
-        var languageServiceHost = new Lint.LanguageServiceHost(syntaxTree, TypeScript.fullText(syntaxTree.sourceUnit()));
+        var languageServiceHost = Lint.createLanguageServiceHost("/Users/aramaswamy/dev/tslint/test/files/rules/nousebeforedeclare.test.ts2", sourceFile.getFullText());
         var languageService = ts.createLanguageService(languageServiceHost, documentRegistry);
 
-        return this.applyWithWalker(new NoUseBeforeDeclareWalker(syntaxTree, this.getOptions(), languageService));
+        return this.applyWithWalker(new NoUseBeforeDeclareWalker(sourceFile, this.getOptions(), languageService));
     }
 }
 
 class NoUseBeforeDeclareWalker extends Lint.RuleWalker {
-    private fileName: string;
     private languageService: ts.LanguageService;
-    private classStartPosition: number;
 
-    constructor(syntaxTree: TypeScript.SyntaxTree, options: Lint.IOptions, languageService: ts.LanguageService) {
-        super(syntaxTree, options);
-        this.fileName = syntaxTree.fileName();
+    constructor(sourceFile: ts.SourceFile, options: Lint.IOptions, languageService: ts.LanguageService) {
+        super(sourceFile, options);
         this.languageService = languageService;
-        this.classStartPosition = 0;
     }
 
-    public visitClassDeclaration(node: TypeScript.ClassDeclarationSyntax): void {
-        this.classStartPosition = this.getPosition(); // class variables used before the class is declared are fine
-        super.visitClassDeclaration(node);
-        this.classStartPosition = 0; // reset to beginning of file
-    }
+    public visitImportDeclaration(node: ts.ImportDeclaration): void {
+        node.getChildren().forEach((child) => {
+            if (child.kind === ts.SyntaxKind.Identifier) {
+                this.validateUsageForVariable(child.getText(), child.getStart());
+            }
+        });
 
-    public visitImportDeclaration(node: TypeScript.ImportDeclarationSyntax): void {
-        var position = this.positionAfter(node.importKeyword);
-        this.validateUsageForVariable(node.identifier.text(), position);
         super.visitImportDeclaration(node);
     }
 
-    public visitVariableDeclarator(node: TypeScript.VariableDeclaratorSyntax): void {
-        var position = this.getPosition() + node.propertyName.leadingTriviaWidth();
-        this.validateUsageForVariable(node.propertyName.text(), position);
-        super.visitVariableDeclarator(node);
+    public visitVariableDeclaration(node: ts.VariableDeclaration): void {
+        this.validateUsageForVariable(node.name.text, node.getStart());
+
+        super.visitVariableDeclaration(node);
     }
 
     private validateUsageForVariable(name: string, position: number) {
-        var references = this.languageService.getReferencesAtPosition(this.fileName, position);
+        var references = this.languageService.getReferencesAtPosition("/Users/aramaswamy/dev/tslint/test/files/rules/nousebeforedeclare.test.ts2", position);
         if (references) {
             references.forEach((reference) => {
                 var referencePosition = reference.textSpan.start();
-                if (this.classStartPosition <= referencePosition && referencePosition < position) {
+                if (referencePosition < position) {
                     var failureString = Rule.FAILURE_STRING_PREFIX + name + Rule.FAILURE_STRING_POSTFIX;
                     var failure = this.createFailure(referencePosition, name.length, failureString);
                     this.addFailure(failure);
