@@ -25,7 +25,7 @@ module Lint {
                 return {
                     getText: (start, end) => source.substring(start, end),
                     getLength: () => source.length,
-                    getLineStartPositions: () => [],
+                    getLineStartPositions: () => ts.computeLineStarts(source),
                     getChangeRange: (oldSnapshot) => undefined
                 };
             },

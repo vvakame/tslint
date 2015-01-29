@@ -23,7 +23,7 @@ export class Rule extends Lint.Rules.AbstractRule {
     public apply(sourceFile: ts.SourceFile): Lint.RuleFailure[] {
         console.log(sourceFile.filename);
         var documentRegistry = ts.createDocumentRegistry();
-        var languageServiceHost = Lint.createLanguageServiceHost("/Users/aramaswamy/dev/tslint/test/files/rules/nousebeforedeclare.test.ts2", sourceFile.getFullText());
+        var languageServiceHost = Lint.createLanguageServiceHost("file.ts", sourceFile.getFullText());
         var languageService = ts.createLanguageService(languageServiceHost, documentRegistry);
 
         return this.applyWithWalker(new NoUseBeforeDeclareWalker(sourceFile, this.getOptions(), languageService));
@@ -55,7 +55,7 @@ class NoUseBeforeDeclareWalker extends Lint.RuleWalker {
     }
 
     private validateUsageForVariable(name: string, position: number) {
-        var references = this.languageService.getReferencesAtPosition("/Users/aramaswamy/dev/tslint/test/files/rules/nousebeforedeclare.test.ts2", position);
+        var references = this.languageService.getReferencesAtPosition("file.ts", position);
         if (references) {
             references.forEach((reference) => {
                 var referencePosition = reference.textSpan.start();
