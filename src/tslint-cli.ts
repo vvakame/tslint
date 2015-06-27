@@ -23,18 +23,14 @@ const optimist = require("optimist")
     .usage("usage: $0")
     .check((argv: any) => {
         // at least one of file, help, version or unqualified argument must be present
-        if (!(argv.f || argv.h || argv.v || argv._.length > 0)) {
-            throw "Missing required arguments: f";
+        if (!(argv.h || argv.v || argv._.length > 0)) {
+            throw "Missing files";
         }
     })
     .options({
         "c": {
             alias: "config",
             describe: "configuration file"
-        },
-        "f": {
-            alias: "file",
-            describe: "file to lint"
         },
         "h": {
             alias: "help",
@@ -84,10 +80,6 @@ if ("help" in argv) {
     outputStream.write(optimist.help());
     const outputString = `
 tslint accepts the following commandline options:
-
-    -f, --file:
-        The location of the TypeScript file that you wish to lint. This
-        option is required. Muliptle files are processed consecutively.
 
     -c, --config:
         The location of the configuration file that tslint will use to
@@ -175,13 +167,7 @@ const processFile = (file: string) => {
     }
 };
 
-let files = [];
-if (argv.f instanceof Array) {
-    files = files.concat(argv.f);
-} else if (typeof argv.f === "string") {
-    files.push(argv.f);
-}
-files = files.concat(argv._);
+let files = argv._;
 
 for (const file of files) {
         processFile(file);
